@@ -1,7 +1,6 @@
 from django.db import models
 from datetime import datetime
 from uuid import uuid4
-from .managers import ArchiveManager
 
 
 def get_event_id(instance):
@@ -42,7 +41,6 @@ class Archive(models.Model):
     source = models.ImageField(
         upload_to=path_generator, help_text="store the image of the resource"
     )
-    objects = ArchiveManager
 
     def __str__(self):
         return str(self.id)
