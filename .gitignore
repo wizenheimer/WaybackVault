@@ -9,7 +9,7 @@ db.sqlite3
 media
 
 # Media files #
-uploads/
+media/
 
 # Backup files # 
 *.bak 
