@@ -8,5 +8,8 @@ router.register(r"resource", views.ResourceViewset, basename="resource_viewset")
 
 # The API URLs are now determined automatically by the router.
 urlpatterns = [
+    path(
+        "resource/<int:pk>/schedule/", views.schedule_archive, name="schedule_archive"
+    ),
     path("", include(router.urls)),
 ]

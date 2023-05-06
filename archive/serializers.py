@@ -21,7 +21,7 @@ class ResourceSerializer(serializers.ModelSerializer):
 
     def fetch_archive(self, instance):
         return (
-            Archive.objects.filter(resource=instance, status="complete")
-            .order_by("created_at")
+            Archive.objects.filter(resource=instance, status="completed")
+            .order_by("-created_at")
             .values()
         )

@@ -56,6 +56,4 @@ def archive(url):
     resource = Resource.objects.get_or_create(url=url)[0]
     archive = Archive.objects.create(resource=resource)
     # TODO: Enqueue the archive to be populated
-    archive.status = "enqueued"
-    archive.save()
     populate_archive(archive)

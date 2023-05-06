@@ -19,9 +19,8 @@ class Archive(models.Model):
     """
 
     STATUS_CHOICES = (
-        ("pending", "pending"),
-        ("enqueued", "enqueued"),
-        ("complete", "complete"),
+        ("scheduled", "scheduled"),
+        ("completed", "completed"),
         ("failed", "failed"),
     )
 
@@ -38,7 +37,7 @@ class Archive(models.Model):
     status = models.CharField(
         max_length=255,
         choices=STATUS_CHOICES,
-        default="pending",
+        default="scheduled",
         db_index=True,
     )
 
