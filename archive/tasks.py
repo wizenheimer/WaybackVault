@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 import requests
 import os
 from .models import Archive, Resource
+from core.celery import app
 
 
 def build_path(date):
@@ -43,7 +44,8 @@ def exception_profiler(retries_so_far, exception):
     return retries_so_far < 3 and isinstance(exception, requests.exceptions.ReadTimeout)
 
 
-@dramatiq.actor(max_retries=3, retry_when=exception_profiler)
+# @dramatiq.actor(max_retries=3, retry_when=exception_profiler)
+@app.task
 def build_archive(pk):
     """
     Prepare a current archive for the given resoure id.
@@ -65,15 +67,16 @@ def build_archive(pk):
         archive.save()
 
 
-@dramatiq.actor(max_retries=3, retry_when=exception_profiler)
+# @dramatiq.actor(max_retries=3, retry_when=exception_profiler)
+@app.task
 def periodic_archive():
     """
     Prepare an archive for all active resource.
     """
     resources = Resource.objects.filter(is_active=True)
     for resource in resources:
-        archive = Resource.objects.get_or_create(
-            resource=resource, created_at=datetime.datetime.utcnow()
+        archive = Archive.objects.get_or_create(
+            resource=resource, created_at=datetime.datetime.utcnow(), status="scheduled"
         )[0]
 
         url = resource.url
