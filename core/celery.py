@@ -17,7 +17,7 @@ schedule = [15, 60, 180]
 # schedule the task
 for sec in schedule:
     app.conf.beat_schedule[f"task_{sec}"] = {
-        "task": "celery_app.periodic_archive",
+        "task": "archive.tasks.periodic_archive",
         "schedule": timedelta(seconds=sec),
         "args": (sec,),
     }

@@ -42,8 +42,9 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # 3rd party libraries
-    "django_dramatiq",
+    # "django_dramatiq",
     "rest_framework",
+    "django_celery_results",
     # local apps
     "archive",
 ]
@@ -133,3 +134,5 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media/"
+
+CELERY_RESULT_BACKEND = "django-db"
