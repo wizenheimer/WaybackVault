@@ -69,11 +69,12 @@ def build_archive(pk):
 
 # @dramatiq.actor(max_retries=3, retry_when=exception_profiler)
 @app.task
-def periodic_archive():
+def periodic_archive(seconds=15):
     """
     Prepare an archive for all active resource.
     """
-    resources = Resource.objects.filter(is_active=True)
+    print("==============" + str(seconds) + "==============")
+    resources = Resource.objects.filter(is_active=True, frequency=seconds)
     for resource in resources:
         archive = Archive.objects.get_or_create(
             resource=resource, created_at=datetime.datetime.utcnow(), status="scheduled"
