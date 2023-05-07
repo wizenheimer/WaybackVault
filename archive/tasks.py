@@ -72,9 +72,13 @@ def build_archive(pk):
 def periodic_archive(seconds=15):
     """
     Prepare an archive for all active resource.
+    Uses iterator to lazy load resources
+    Other optimizations tried here, requires tweaking model structure
+    Use values_list() to retrieve only the URL field
+    Use batch processing to limit the number of records retrieved at once
     """
-    print("==============" + str(seconds) + "==============")
-    resources = Resource.objects.filter(is_active=True, frequency=seconds)
+    # use iterator to lazy load resources
+    resources = Resource.objects.filter(is_active=True, frequency=seconds).iterator()
     for resource in resources:
         archive = Archive.objects.get_or_create(
             resource=resource, created_at=datetime.datetime.utcnow(), status="scheduled"
