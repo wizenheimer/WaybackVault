@@ -1,23 +1,34 @@
+import os
+import datetime
+import requests
 from uuid import uuid4
 from .models import Archive, Resource
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-
-options = Options()
-options.headless = True
+from urllib.parse import urlencode
 
 
-def get_screenshot(url=None, path=None, folder="uploads/", filename="screenshot.png"):
+def get_screenshot(url=None, path=None, folder="media/", filename="screenshot.png"):
     """
-    Gets a screenshot using selenium
+    Gets a screenshot using APIFlash
     """
     if path is None:
         path = f"{folder}/{filename}"
-    driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
-    driver.get(url)
-    driver.save_screenshot(path)
-    driver.quit()
+
+    params = {
+        "access_key": os.environ.get("API_FLASH_KEY"),
+        "url": f"{url}",
+        "full_page": True,
+        "scroll_page": True,
+        "fresh": True,
+    }
+
+    url = "https://api.apiflash.com/v1/urltoimage?" + urlencode(params)
+
+    response = requests.get(url)
+
+    with open(f"{path}", "wb") as f:
+        f.write(response.content)
+
+    return response.status_code
 
 
 def get_event_id(instance):
@@ -32,7 +43,7 @@ def path_generator(instance):
     """
     Uses event_id and resource_id to generate a unique path
     """
-    return f"uploads/archive/{get_event_id(instance)}.png"
+    return f"media/archive/{get_event_id(instance)}.png"
 
 
 def populate_archive(instance):
@@ -41,19 +52,27 @@ def populate_archive(instance):
     """
     url = instance.resource.url
     path = path_generator(instance)
-    instance.status = "failed"
-    instance.save()
-    get_screenshot(url, path)
+
+    if get_screenshot(url, path) != 200:
+        instance.status = "failed"
+    else:
+        instance.status = "completed"
+
     instance.source = path
-    instance.status = "complete"
     instance.save()
 
 
-def archive(url):
+def prepare_archive(url=None, date=None):
     """
     Prepares an archive model for the given resource.
     """
     resource = Resource.objects.get_or_create(url=url)[0]
-    archive = Archive.objects.create(resource=resource)
-    # TODO: Enqueue the archive to be populated
+    if date is None:
+        date = datetime.datetime.now()
+    else:
+        date = datetime.strptime(date, "%m-%d-%y %H:%M:%S")
+
+    archive = Archive.objects.get_or_create(
+        resource=resource, status="scheduled", created_at=date
+    )[0]
     populate_archive(archive)
