@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework.response import Response
 from .models import Resource, Archive
 from .serializers import ResourceSerializer, ArchiveSerializer
-from .util import prepare_archive, populate_archive
+from .tasks import archiver
 
 
 # TODO: add support for timezones
@@ -36,8 +36,9 @@ class ResourceViewset(viewsets.ModelViewSet):
 
 @api_view(["POST"])
 def schedule_archive(request, pk=None):
-    resource = get_object_or_404(Resource, pk=pk)
     date = request.data.get("date", None)
+    resource = get_object_or_404(Resource, pk=pk)
+
     if date is None:
         date = datetime.datetime.now()
     else:
@@ -46,9 +47,10 @@ def schedule_archive(request, pk=None):
     archive = Archive.objects.get_or_create(
         resource=resource, status="scheduled", created_at=date
     )[0]
-    populate_archive(archive)
+
+    archiver.send(pk=archive.id)
     return Response(
         {
-            "archive": f"{archive.status}",
+            "message": "task scheduled successfully.",
         }
     )
