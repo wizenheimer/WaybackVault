@@ -44,11 +44,13 @@ def exception_profiler(retries_so_far, exception):
 
 
 @dramatiq.actor(max_retries=3, retry_when=exception_profiler)
-def archiver(pk):
+def build_archive(pk):
+    """
+    Prepare a current archive for the given resoure id.
+    """
     archive = Archive.objects.get(pk=pk)
     url = archive.resource.url
     path = build_path(archive.created_at)
-
     try:
         if get_screenshot(url, path) != 200:
             archive.status = "failed"
@@ -61,3 +63,31 @@ def archiver(pk):
         archive.status = "failed"
     finally:
         archive.save()
+
+
+@dramatiq.actor(max_retries=3, retry_when=exception_profiler)
+def periodic_archive():
+    """
+    Prepare an archive for all active resource.
+    """
+    resources = Resource.objects.filter(is_active=True)
+    for resource in resources:
+        archive = Resource.objects.get_or_create(
+            resource=resource, created_at=datetime.datetime.utcnow()
+        )[0]
+
+        url = resource.url
+        path = build_path(archive.created_at)
+
+        try:
+            if get_screenshot(url, path) != 200:
+                archive.status = "failed"
+            else:
+                archive.status = "completed"
+                archive.source = path
+        except requests.exceptions.ReadTimeout as errrt:
+            archive.status = "failed"
+        except requests.exceptions.RequestException as errex:
+            archive.status = "failed"
+        finally:
+            archive.save()
